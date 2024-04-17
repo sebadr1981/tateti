@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ta-Te-Ti</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f8f8;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #333;
+        }
+        .board {
+            display: inline-block;
+            margin-top: 20px;
+        }
+        .row {
+            display: flex;
+        }
+        .cell {
+            flex: 1;
+            min-width: 100px;
+            height: 100px;
+            background-color: #ffffff;
+            border: 2px solid #ccc;
+            font-size: 40px;
+            line-height: 100px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: center;
+        }
+        .cell:hover {
+            background-color: #f0f0f0;
+        }
+        #turn-indicator {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #555;
+        }
+        #game-time {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #555;
+        }
+        #popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+        }
+        #popup-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        #popup-content label, #popup-content input, #popup-content button {
+            display: block;
+            margin-bottom: 10px;
+        }
+        #popup-content input[type="text"], #popup-content button {
+            width: 200px;
+            padding: 5px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        #popup-content input[type="text"]:focus {
+            outline: none;
+        }
+        #popup-content button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        #popup-content button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ta-Te-Ti</h1>
+    <div id="popup">
+        <div id="popup-content">
+            <label for="player1">Nombre del jugador 1:</label>
+            <input type="text" id="player1" required>
+            <label for="player2">Nombre del jugador 2:</label>
+            <input type="text" id="player2" required>
+            <button id="start-button">Comenzar juego</button>
+        </div>
+    </div>
+    <div class="board" style="display: none;">
+        <div class="row">
+            <div class="cell" onclick="makeMove(0)"></div>
+            <div class="cell" onclick="makeMove(1)"></div>
+            <div class="cell" onclick="makeMove(2)"></div>
+        </div>
+        <div class="row">
+            <div class="cell" onclick="makeMove(3)"></div>
+            <div class="cell" onclick="makeMove(4)"></div>
+            <div class="cell" onclick="makeMove(5)"></div>
+        </div>
+        <div class="row">
+            <div class="cell" onclick="makeMove(6)"></div>
+            <div class="cell" onclick="makeMove(7)"></div>
+            <div class="cell" onclick="makeMove(8)"></div>
+        </div>
+    </div>
+    <div id="turn-indicator"></div>
+    <div id="game-time"></div>
+
+    <script>
+        let player1 = '';
+        let player2 = '';
+        let currentPlayer = '';
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let startTime;
+        let interval;
+
+        document.getElementById('popup').style.display = 'block';
+
+        document.getElementById('start-button').addEventListener('click', function() {
+            player1 = document.getElementById('player1').value;
+            player2 = document.getElementById('player2').value;
+            currentPlayer = 'X'; // Jugador 1 comienza siempre con 'X'
+            startTime = Date.now();
+            document.getElementById('popup').style.display = 'none';
+            document.querySelector('.board').style.display = 'inline-block';
+            document.getElementById('turn-indicator').textContent = 'Turno de ' + player1;
+            interval = setInterval(updateGameTime, 1000);
+        });
+
+        function updateGameTime() {
+            const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsedTime / 60);
+            const seconds = elapsedTime % 60;
+            document.getElementById('game-time').textContent = 'Tiempo de juego: ' + minutes + 'm ' + seconds + 's';
+        }
+
+        function makeMove(cellIndex) {
+            if (board[cellIndex] === '') {
+                board[cellIndex] = currentPlayer;
+                document.getElementsByClassName('cell')[cellIndex].innerText = currentPlayer;
+                if (checkWinner()) {
+                    clearInterval(interval);
+                    alert(currentPlayer === 'X' ? player1 + ' ha ganado!' : player2 + ' ha ganado!');
+                    resetGame();
+                } else if (board.every(cell => cell !== '')) {
+                    clearInterval(interval);
+                    alert('¡Empate!');
+                    resetGame();
+                } else {
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X'; // Alternar entre 'X' y 'O'
+                    document.getElementById('turn-indicator').textContent = 'Turno de ' + (currentPlayer === 'X' ? player1 : player2);
+                }
+            }
+        }
+
+        function checkWinner() {
+            const winningConditions = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+            return winningConditions.some(condition =>
+                condition.every(index => board[index] === currentPlayer)
+            );
+        }
+
+        function resetGame() {
+            currentPlayer = 'X'; // Reiniciar con jugador 1 como 'X'
+            board = ['', '', '', '', '', '', '', '', ''];
+            const cells = document.getElementsByClassName('cell');
+            for (let i = 0; i < cells.length; i++) {
+                cells[i].innerText = '';
+            }
+            document.getElementById('turn-indicator').textContent = 'Turno de ' + player1;
+            document.getElementById('game-time').textContent = '';
+        }
+    </script>
+</body>
+</html>
